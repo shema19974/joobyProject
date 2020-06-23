@@ -1,0 +1,77 @@
+buildscript {
+  ext {
+    
+    joobyVersion = "2.8.7"
+  }
+}
+
+plugins {
+  id "application"
+  id "io.jooby.run" version "${joobyVersion}"
+  id "io.spring.dependency-management" version "1.0.9.RELEASE"
+  id "com.google.osdetector" version "1.6.2"
+  id "com.github.johnrengelman.shadow" version "5.2.0"
+  id "io.jooby.openAPI" version "${joobyVersion}"
+}
+
+group "app"
+version "1.0.0"
+mainClassName = "jp.diveintocode.App"
+sourceCompatibility = 1.8
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  jcenter()
+}
+
+dependencyManagement {
+  imports {
+    mavenBom "io.jooby:jooby-bom:$joobyVersion"
+  }
+}
+
+dependencies {
+  annotationProcessor "io.jooby:jooby-apt"
+  implementation "io.jooby:jooby-netty"
+  implementation "io.netty:netty-transport-native-epoll:${dependencyManagement.importedProperties['netty.version']}:${osdetector.classifier.contains('linux') ? 'linux-x86_64' : ''}"
+  implementation "io.netty:netty-tcnative-boringssl-static:${dependencyManagement.importedProperties['boringssl.version']}"
+  implementation group: 'io.sentry', name: 'sentry-logback', version: '1.7.23'
+  implementation 'io.jooby:jooby-gson:2.8.7'
+  implementation 'io.jooby:jooby-guice:2.8.7'
+  implementation "ch.qos.logback:logback-classic"
+  implementation 'io.jooby:jooby-swagger-ui:2.8.7'
+//  implementation "io.jooby:jooby-test:${joobyVersion}"
+  implementation "io.jooby:jooby-guice:${joobyVersion}"
+  implementation 'org.mongodb:mongodb-driver-sync:3.10.2'
+  implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+  implementation group: 'io.github.java-diff-utils', name: 'java-diff-utils', version: '4.0'
+  compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
+  testImplementation "org.junit.jupiter:junit-jupiter-api"
+  testImplementation "org.junit.jupiter:junit-jupiter-engine"
+  testImplementation "io.jooby:jooby-test"
+  testImplementation "com.squareup.okhttp3:okhttp"
+  testImplementation "junit:junit:4.12"
+  testImplementation "io.rest-assured:rest-assured:4.0.0"
+  testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.12.2'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+/** Java debug information: */
+tasks.withType(JavaCompile) {
+  options.compilerArgs << '-parameters'
+  options.debug = true
+}
+
+shadowJar {
+  mergeServiceFiles()
+}
+
+// Run openAPI task on joobyRun
+joobyRun.dependsOn openAPI
+
+// Run openAPI task on build
+jar.dependsOn openAPI
